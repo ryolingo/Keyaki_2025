@@ -1,65 +1,175 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+import { useCallback, useState } from "react";
+import { addComment } from "@/lib/mockStore";
+import { motion, AnimatePresence } from "framer-motion";
+
+export default function SubmitPage() {
+	const [name, setName] = useState("");
+	const [comment, setComment] = useState("");
+	const [sending, setSending] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const [done, setDone] = useState(false);
+
+	const onSubmit = useCallback(
+		async (e: React.FormEvent) => {
+			e.preventDefault();
+			setError(null);
+			if (!comment.trim()) {
+				setError("コメントを入力してください。");
+				return;
+			}
+			try {
+				setSending(true);
+				// モック保存（後で Supabase に置換予定）
+				addComment({ name, comment });
+				setName("");
+				setComment("");
+				setDone(true);
+				// モーダルを自動でクリア（5秒後）
+				setTimeout(() => setDone(false), 5000);
+			} catch {
+				setError("送信に失敗しました。時間をおいて再度お試しください。");
+			} finally {
+				setSending(false);
+			}
+		},
+		[name, comment]
+	);
+
+	return (
+		<div className="min-h-dvh relative flex flex-col items-center justify-center p-6 bg-white overflow-hidden">
+			{/* 背景のポップな装飾 */}
+			<motion.img
+				src="/logo.svg"
+				alt="logo watermark"
+				className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10"
+				style={{ width: 360, height: 360 }}
+				initial={{ scale: 0.95, rotate: -8, opacity: 0 }}
+				animate={{ scale: [0.95, 1.02, 0.98, 1], rotate: [-8, -6, -8], opacity: 0.08 }}
+				transition={{ duration: 8, ease: "easeInOut", repeat: Infinity }}
+			/>
+			<motion.div
+				className="pointer-events-none absolute -top-10 -left-10 w-48 h-48 rounded-full bg-pink-200/40"
+				initial={{ scale: 0.8, opacity: 0 }}
+				animate={{ scale: [0.9, 1, 0.95, 1], opacity: 1, y: [0, -6, 0] }}
+				transition={{ duration: 4, ease: "easeInOut", repeat: Infinity }}
+			/>
+			<motion.div
+				className="pointer-events-none absolute -bottom-12 -right-10 w-56 h-56 rounded-full bg-pink-300/30"
+				initial={{ scale: 0.8, opacity: 0 }}
+				animate={{ scale: [1, 0.96, 1.02, 1], opacity: 1, y: [0, 8, 0] }}
+				transition={{ duration: 5, ease: "easeInOut", repeat: Infinity }}
+			/>
+
+			<motion.div
+				className="w-full max-w-md rounded-3xl border border-pink-200/70 bg-white/80 backdrop-blur p-6 shadow-[0_15px_40px_-20px_rgba(236,72,153,0.35)]"
+				initial={{ y: 12, opacity: 0 }}
+				animate={{ y: 0, opacity: 1 }}
+				transition={{ duration: 0.5, ease: "easeIn" }}
+			>
+				<div className="flex items-center gap-3 mb-2">
+					<motion.img
+						src="/logo.svg"
+						alt="logo"
+						className="h-8 w-8"
+						initial={{ y: -4, opacity: 0 }}
+						animate={{ y: 0, opacity: 1, rotate: [0, -4, 0, 4, 0] }}
+						transition={{ duration: 0.6, ease: "easeIn" }}
+					/>
+					<h1 className="text-2xl font-extrabold text-pink-600">感想を送る</h1>
+				</div>
+				<form onSubmit={onSubmit} className="space-y-4">
+					<div className="space-y-1">
+						<label className="block text-sm text-gray-500">お名前（任意）</label>
+						<input
+							type="text"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							placeholder="例: けやき太郎"
+							className="w-full rounded-2xl border border-pink-100 bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-pink-300 text-black"
+						/>
+					</div>
+					<div className="space-y-1">
+						<label className="block text-sm text-gray-500">コメント</label>
+						<textarea
+							value={comment}
+							onChange={(e) => setComment(e.target.value)}
+							placeholder="感想を入力してください"
+							rows={4}
+							className="w-full rounded-2xl border border-pink-100 bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-pink-300 text-black placeholder:text-gray-400"
+						/>
+					</div>
+					{error && <p className="text-sm text-red-500">{error}</p>}
+					<motion.button
+						type="submit"
+						disabled={sending}
+						whileTap={{ scale: 0.98 }}
+						whileHover={{ scale: 1.02 }}
+						className="w-full rounded-2xl bg-pink-500 text-white py-3 font-semibold hover:bg-pink-600 disabled:opacity-60"
+					>
+						{sending ? "送信中..." : "送信する"}
+					</motion.button>
+				</form>
+			</motion.div>
+
+{/* 綿菓子のようなモーダル（円形クリップで丸く消える） */}
+			<AnimatePresence>
+				{done && (
+					<>
+						{/* 背景オーバーレイ */}
+						<motion.div
+							className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+							transition={{ duration: 0.3 }}
+							onClick={() => setDone(false)}
+						/>
+						{/* モーダル本体 */}
+						<div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-xl px-6 pointer-events-none">
+							<motion.div
+								className="rounded-3xl bg-gradient-to-br from-pink-100 via-pink-50 to-white p-8 shadow-[0_20px_60px_-15px_rgba(236,72,153,0.4)] border border-pink-200/50 pointer-events-auto"
+								initial={{ 
+									clipPath: "circle(0% at 50% 50%)",
+									opacity: 0,
+									scale: 0.3
+								}}
+								animate={{
+									clipPath: "circle(70% at 50% 50%)",
+									opacity: 1,
+									scale: 1
+								}}
+								exit={{
+									clipPath: "circle(0% at 50% 50%)",
+									opacity: 0,
+									scale: 0.8
+								}}
+								transition={{
+									duration: 0.5,
+									ease: [0.4, 0, 0.2, 1]
+								}}
+							>
+								<motion.p
+									className="text-center text-md font-bold text-pink-700 leading-relaxed"
+									initial={{ opacity: 0, y: 10 }}
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, y: -10 }}
+									transition={{ delay: 0.2, duration: 0.3 }}
+								>
+                                    ご来場いただき
+                                    <br />
+                                    ありがとうございました！
+                                    <br />
+                                    引き続き、欅祭をお楽しみください🍑
+								</motion.p>
+							</motion.div>
+						</div>
+					</>
+				)}
+			</AnimatePresence>
+		</div>
+	);
 }
+
+
