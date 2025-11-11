@@ -26,8 +26,8 @@ export default function SubmitPage() {
 				setName("");
 				setComment("");
 				setDone(true);
-				// モーダルを自動でクリア（5秒後）
-				setTimeout(() => setDone(false), 5000);
+				// モーダルを自動でクリア（10秒後）
+				setTimeout(() => setDone(false), 10000);
 			} catch {
 				setError("送信に失敗しました。時間をおいて再度お試しください。");
 			} finally {
@@ -114,7 +114,8 @@ export default function SubmitPage() {
 			</motion.div>
 
 {/* 綿菓子のようなモーダル（円形クリップで丸く消える） */}
-			<AnimatePresence>
+      <AnimatePresence>
+        
 				{done && (
 					<>
 						{/* 背景オーバーレイ */}
@@ -157,14 +158,82 @@ export default function SubmitPage() {
 									exit={{ opacity: 0, y: -10 }}
 									transition={{ delay: 0.2, duration: 0.3 }}
 								>
-                                    ご来場いただき
-                                    <br />
-                                    ありがとうございました！
-                                    <br />
-                                    引き続き、欅祭をお楽しみください🍑
+                                   ご来場いただき
+                                   <br />
+                                   ありがとうございました！
+                                   <br />
+                                   引き続き、欅祭をお楽しみください🍑
 								</motion.p>
 							</motion.div>
 						</div>
+						{/* Xアカウントフォロー促しセクション */}
+						<motion.div
+							className="fixed left-1/2 top-[calc(50%+220px)] -translate-x-1/2 z-50 w-full max-w-xl px-6 pointer-events-none"
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: 20 }}
+							transition={{ delay: 0.4, duration: 0.4 }}
+						>
+							<div className="relative flex items-center justify-center gap-2 pointer-events-auto">
+								{/* 左矢印（右に動いてカードに向かう） */}
+								<motion.div
+									className="text-pink-500 text-2xl"
+									animate={{ x: [-12, 0, -12] }}
+									transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+								>
+									←
+								</motion.div>
+								<a
+									href="https://x.com/PeachTech_0927"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-center text-sm font-semibold text-pink-600 hover:text-pink-700 underline decoration-pink-300 hover:decoration-pink-400 transition-colors"
+								>
+									このXアカウントもぜひフォローしてください！
+								</a>
+								{/* 右矢印（左に動いてカードに向かう） */}
+								<motion.div
+									className="text-pink-500 text-2xl"
+									animate={{ x: [12, 0, 12] }}
+									transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+								>
+									→
+								</motion.div>
+							</div>
+						</motion.div>
+						{/* Instagram フォロー促しセクション */}
+						<motion.div
+							className="fixed left-1/2 top-[calc(50%+260px)] -translate-x-1/2 z-50 w-full max-w-xl px-6 pointer-events-none"
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: 20 }}
+							transition={{ delay: 0.5, duration: 0.4 }}
+						>
+							<div className="relative flex items-center justify-center gap-2 pointer-events-auto">
+								<motion.div
+									className="text-pink-500 text-2xl"
+									animate={{ x: [-12, 0, -12] }}
+									transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+								>
+									←
+								</motion.div>
+								<a
+									href="https://www.instagram.com/peachtech_0927/"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-center text-sm font-semibold text-pink-600 hover:text-pink-700 underline decoration-pink-300 hover:decoration-pink-400 transition-colors"
+								>
+									Instagram もぜひフォローしてください！
+								</a>
+								<motion.div
+									className="text-pink-500 text-2xl"
+									animate={{ x: [12, 0, 12] }}
+									transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+								>
+									→
+								</motion.div>
+							</div>
+						</motion.div>
 					</>
 				)}
 			</AnimatePresence>
