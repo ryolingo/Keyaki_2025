@@ -56,6 +56,9 @@ export default function WallPage() {
 
 	return (
 		<div className="min-h-dvh flex flex-col bg-white">
+			<header className="p-4">
+				<h1 className="text-lg font-bold text-gray-700">みんなの感想</h1>
+			</header>
 			<main className="relative flex-1 overflow-hidden">
 				{/* 背景ロゴ（超薄いウォーターマーク） */}
 				<div className="pointer-events-none absolute inset-0 flex items-center justify-center">
