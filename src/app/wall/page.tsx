@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CommentItem, getComments, subscribeComments } from "@/lib/mockStore";
+import {
+	CommentItem,
+	getCommentsFromFirestore,
+	subscribeCommentsFromFirestore,
+} from "@/lib/firestore";
 import { motion } from "framer-motion";
 
 function randomBetween(min: number, max: number) {
@@ -12,13 +16,22 @@ export default function WallPage() {
 	const [items, setItems] = useState<CommentItem[]>([]);
 
 	useEffect(() => {
-		const unsub = subscribeComments(setItems);
-		return () => unsub();
+		// リアルタイムでコメントを監視
+		const unsubscribe = subscribeCommentsFromFirestore(setItems);
+		return () => unsubscribe();
 	}, []);
 
 	// 初期ロード（サーバ遷移時の空白防止）
 	useEffect(() => {
-		setItems(getComments());
+		const loadInitialComments = async () => {
+			try {
+				const comments = await getCommentsFromFirestore();
+				setItems(comments);
+			} catch (error) {
+				console.error("コメント取得エラー:", error);
+			}
+		};
+		loadInitialComments();
 	}, []);
 
 	// レイアウト用ランダム値をメモ化（ID毎に固定）

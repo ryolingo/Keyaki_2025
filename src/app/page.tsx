@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { addComment } from "@/lib/mockStore";
+import { addCommentToFirestore } from "@/lib/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function SubmitPage() {
@@ -21,14 +21,15 @@ export default function SubmitPage() {
 			}
 			try {
 				setSending(true);
-				// モック保存（後で Supabase に置換予定）
-				addComment({ name, comment });
+				// Firestoreにコメントを保存
+				await addCommentToFirestore({ name, comment });
 				setName("");
 				setComment("");
 				setDone(true);
 				// モーダルを自動でクリア（10秒後）
 				setTimeout(() => setDone(false), 10000);
-			} catch {
+			} catch (error) {
+				console.error("コメント送信エラー:", error);
 				setError("送信に失敗しました。時間をおいて再度お試しください。");
 			} finally {
 				setSending(false);
