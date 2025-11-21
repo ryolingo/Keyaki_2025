@@ -8,8 +8,44 @@ import {
 } from "@/lib/firestore";
 import { motion } from "framer-motion";
 
-function randomBetween(min: number, max: number) {
-	return Math.random() * (max - min) + min;
+// コメントの幅を考慮して、重ならないX位置を計算
+function calculateNonOverlappingPositions(
+	items: CommentItem[]
+): Map<string, { left: number; width: number; height: number }> {
+	const map = new Map<string, { left: number; width: number; height: number }>();
+	const screenWidth = typeof window !== "undefined" ? window.innerWidth : 1920; // デフォルト1920px
+	const minMargin = 20; // 最小マージン（px）
+	const minLeft = 40; // 左端の最小マージン（px）
+	const maxRight = screenWidth - 40; // 右端の最大マージン（px）
+	
+	// 各コメントの幅を計算
+	const itemsWithWidth = items.map((item) => {
+		const text = item.name ? `${item.name}：${item.comment}` : item.comment;
+		const len = Math.max(1, text.length);
+		const width = Math.min(120 + Math.floor(len * 6), 420);
+		const height = Math.min(52 + Math.floor(len * 0.9), 140);
+		return { item, width, height };
+	});
+	
+	// 左から右に順番に配置（重ならないように）
+	let currentX = minLeft;
+	
+	itemsWithWidth.forEach(({ item, width, height }) => {
+		// 画面幅を超える場合は、左端に戻す
+		if (currentX + width + minMargin > maxRight) {
+			currentX = minLeft;
+		}
+		
+		// 中央揃えのため、leftは中心位置を指定
+		const left = (currentX + width / 2) / screenWidth * 100; // %に変換
+		
+		map.set(item.id, { left, width, height });
+		
+		// 次のコメントの位置を更新（現在のコメントの右端 + マージン）
+		currentX += width + minMargin;
+	});
+	
+	return map;
 }
 
 export default function WallPage() {
@@ -34,36 +70,39 @@ export default function WallPage() {
 		loadInitialComments();
 	}, []);
 
-	// レイアウト用ランダム値をメモ化（ID毎に固定）
+	// レイアウト用の値をメモ化（重ならないように配置）
 	const bubbleLayout = useMemo(() => {
+		const positionMap = calculateNonOverlappingPositions(items);
 		const map = new Map<
 			string,
 			{
-				left: string;
-				top: string;
+				left: number; // X位置（%）
 				width: number; // 文字数に応じて拡大
 				height: number; // 文字数に応じて拡大
-				delay: number;
-				duration: number;
-				amplitude: number;
+				duration: number; // 上昇速度（秒）
+				delay: number; // 開始遅延（秒）
 			}
 		>();
-		for (const item of items) {
-			if (!map.has(item.id)) {
-				const left = `${Math.floor(randomBetween(5, 85))}%`;
-				const top = `${Math.floor(randomBetween(10, 80))}%`;
-				// テキスト長に応じてサイズを決定
-				const text = item.name ? `${item.name}：${item.comment}` : item.comment;
-				const len = Math.max(1, text.length);
-				// 横長の楕円を基本に、長いほど大きく（上限あり）
-				const width = Math.min(120 + Math.floor(len * 6), 420);
-				const height = Math.min(52 + Math.floor(len * 0.9), 140);
-				const delay = randomBetween(0, 2); // s
-				const duration = randomBetween(4, 9); // s
-				const amplitude = randomBetween(16, 48); // 上下の振幅(px)
-				map.set(item.id, { left, top, width, height, delay, duration, amplitude });
-			}
-		}
+		
+		// 各コメントに順番を割り当て（インデックス）
+		items.forEach((item, index) => {
+			const position = positionMap.get(item.id);
+			if (!position) return;
+			
+			// 上昇速度は一定（炭酸のように）
+			const duration = 15 + (index % 5) * 2; // 15-23秒の間で変化
+			
+			// 開始遅延は順番に（下から上に順番に出現）
+			const delay = index * 0.5; // 0.5秒ずつずらす
+			
+			map.set(item.id, {
+				left: position.left,
+				width: position.width,
+				height: position.height,
+				duration,
+				delay,
+			});
+		});
 		return map;
 	}, [items]);
 
@@ -91,29 +130,46 @@ export default function WallPage() {
 						</div>
 					)}
 
-					{items.map((item) => {
-						const layout = bubbleLayout.get(item.id)!;
+					{items.map((item, index) => {
+						const layout = bubbleLayout.get(item.id);
+						if (!layout) return null;
+						
 						const display = item.name ? `${item.name}：${item.comment}` : item.comment;
+						
+						// 下から上に移動（100vh + 自身の高さ分下から開始 → -100px上まで）
+						// 画面の高さを100vhとして計算
+						const startY = 100; // 画面下から100vh分下（%）
+						const endY = -10; // 画面上から10vh分上（%）
+						
 						return (
 							<motion.div
 								key={item.id}
 								className="absolute"
-								style={{ left: layout.left, top: layout.top }}
-								initial={{ y: 10, opacity: 0 }}
-								animate={{ y: [0, -layout.amplitude, 0, layout.amplitude, 0], opacity: 1 }}
+								style={{ 
+									left: `${layout.left}%`,
+									// X位置の調整（幅を考慮して中央揃え）
+									transform: "translateX(-50%)",
+								}}
+								initial={{ y: `${startY}vh`, opacity: 0 }}
+								animate={{ 
+									y: [`${startY}vh`, `${endY}vh`],
+									opacity: [0, 1, 1, 0],
+								}}
 								transition={{
 									delay: layout.delay,
-									// 出現は ease-in、その後 y のループはイージングを変更
-									opacity: { duration: 0.6, ease: "easeIn" },
-									y: { duration: layout.duration, repeat: Infinity, ease: "easeInOut" },
+									duration: layout.duration,
+									repeat: Infinity,
+									repeatDelay: 0,
+									ease: "linear", // 一定速度で上昇（炭酸のように）
+									times: [0, 0.05, 0.95, 1], // 最初と最後でフェードイン/アウト
 								}}
 							>
 								<motion.div
 									className="rounded-full bg-pink-300/80 text-white shadow-[0_8px_24px_-12px_rgba(236,72,153,0.35)] backdrop-blur flex items-center justify-center"
 									style={{ width: layout.width, height: layout.height, maxWidth: "80vw" }}
 									title={display}
-									animate={{ scale: [1, 1.04, 0.98, 1] }}
-									transition={{ duration: 3.6, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+									animate={{ scale: [1, 1.05, 1] }}
+									transition={{ duration: 2, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
 								>
 									<div className="px-4 text-xs leading-snug break-words text-center font-semibold text-black">
 										{display}
